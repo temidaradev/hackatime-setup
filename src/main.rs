@@ -27,9 +27,11 @@ const DEFAULT_API_URL: &str = "https://hackatime.hackclub.com/api/hackatime/v1";
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
+    /// The API key to use
     #[arg(short, long)]
     key: String,
 
+    /// The API URL to use
     #[arg(long, default_value = DEFAULT_API_URL)]
     api_url: String,
 }

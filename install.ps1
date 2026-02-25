@@ -1,3 +1,14 @@
+#  _                _         _   _                
+# | |__   __ _  ___| | ____ _| |_(_)_ __ ___   ___ 
+# | '_ \ / _` |/ __| |/ / _` | __| | '_ ` _ \ / _ \
+# | | | | (_| | (__|   < (_| | |_| | | | | | |  __/
+# |_| |_|\__,_|\___|_|\_\__,_|\__|_|_| |_| |_|\___|
+#
+# This script downloads the Hackatime installer from our GitHub. It's written in Rust and is
+# open source: https://github.com/hackclub/hackatime-setup
+#
+# If you need help, ask in the #hackatime-v2 channel on Slack!
+
 param(
     [Parameter(Mandatory=$true, Position=0)]
     [string]$ApiKey,
@@ -13,6 +24,7 @@ $BinaryName = "hackatime_cli.exe"
 
 $AssetName = "hackatime_setup-windows-x86_64.zip"
 
+# Get latest release
 $ReleasesUri = "https://api.github.com/repos/$Repo/releases/latest"
 $Release = Invoke-RestMethod -Uri $ReleasesUri -Headers @{ "User-Agent" = "PowerShell" }
 
@@ -24,6 +36,7 @@ if (-not $Asset) {
 
 $DownloadUrl = $Asset.browser_download_url
 
+# Download and extract to temp directory
 $TempDir = Join-Path $env:TEMP "hackatime_setup_$(Get-Random)"
 New-Item -ItemType Directory -Path $TempDir | Out-Null
 $ZipPath = Join-Path $TempDir $AssetName

@@ -40,6 +40,7 @@ impl VsCodeFamily {
 
         #[cfg(target_os = "linux")]
         {
+            // Common Linux locations
             paths.push(PathBuf::from(format!("/usr/bin/{}", self.cli_command)));
             paths.push(PathBuf::from(format!(
                 "/usr/local/bin/{}",
@@ -53,7 +54,8 @@ impl VsCodeFamily {
 
         #[cfg(target_os = "windows")]
         {
-            let binary = format!("{}.cmd", self.cli_command);
+            // Windows users might install to LocalAppData or Program Files
+            let binary = format!("{}.cmd", self.cli_command); // Explicitly look for .cmd
 
             if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
                 paths.push(PathBuf::from(format!(
@@ -81,10 +83,13 @@ impl VsCodeFamily {
     }
 
     fn find_cli(&self) -> Option<PathBuf> {
+        // 1. Try to find it in the System PATH using the 'which' crate.
+        // This handles .cmd, .exe, and .bat automatically on Windows.
         if let Ok(path) = which(self.cli_command) {
             return Some(path);
         }
 
+        // 2. Fallback to hardcoded paths if not in PATH
         self.get_fallback_paths()
             .into_iter()
             .find(|path| path.exists())
@@ -97,6 +102,7 @@ impl EditorPlugin for VsCodeFamily {
     }
 
     fn is_installed(&self) -> bool {
+        // It's installed if we can find the CLI OR the extension folder exists
         self.find_cli().is_some()
             || self
                 .extensions_dir()
@@ -112,10 +118,16 @@ impl EditorPlugin for VsCodeFamily {
             )
         })?;
 
+        // Prepare the command
         let mut cmd;
 
         #[cfg(target_os = "windows")]
         {
+            // FIX for os error 193:
+            // On Windows, the 'code' command is often a .cmd batch file.
+            // Executing batch files directly via Command::new sometimes fails
+            // with error 193 if the OS environment isn't perfect.
+            // We wrap it in `cmd /C` to guarantee execution.
             cmd = Command::new("cmd");
             cmd.arg("/C");
             cmd.arg(&cli_path);
