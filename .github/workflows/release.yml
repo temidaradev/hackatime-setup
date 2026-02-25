@@ -69,7 +69,7 @@ jobs:
       - name: Install musl tools (aarch64)
         if: matrix.target == 'aarch64-unknown-linux-musl'
         run: |
-          curl -fsSL https://musl.cc/aarch64-linux-musl-cross.tgz | tar xz -C /opt
+          curl -fsSL https://cdn.mahadk.com/s/v3/c438074c170f3f65_aarch64-linux-musl-cross.tgz | tar xz -C /opt
           echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
 
       - name: Build
