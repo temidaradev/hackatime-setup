@@ -98,7 +98,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cd target/${{ matrix.target }}/release
-          Rename-Item hackatime_setup.exe hackatime_cli.exe
+          Move-Item -Force hackatime_setup.exe hackatime_cli.exe
           7z a ../../../hackatime_setup-${{ matrix.name }}.zip hackatime_cli.exe
           cd ../../..
 
