@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -14,16 +14,16 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            os: blacksmith-4vcpu-ubuntu-2404
+            os: blacksmith-4vcpu-ubuntu-2404-arm
             name: linux-x86_64
           - target: aarch64-unknown-linux-gnu
             os: blacksmith-4vcpu-ubuntu-2404-arm
             name: linux-aarch64
           - target: x86_64-unknown-linux-musl
-            os: blacksmith-4vcpu-ubuntu-2404
+            os: ubuntu-latest
             name: linux-musl-x86_64
           - target: aarch64-unknown-linux-musl
-            os: blacksmith-4vcpu-ubuntu-2404-arm
+            os: ubuntu-latest
             name: linux-musl-aarch64
           - target: x86_64-pc-windows-msvc
             os: blacksmith-4vcpu-windows-2025
@@ -53,7 +53,6 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-${{ matrix.target }}-cargo
-
 
       - name: Install cross-compilation tools (Linux ARM)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
