@@ -69,9 +69,8 @@ jobs:
       - name: Install musl tools (aarch64)
         if: matrix.target == 'aarch64-unknown-linux-musl'
         run: |
-          wget -q https://musl.cc/aarch64-linux-musl-cross.tgz
-          tar xzf aarch64-linux-musl-cross.tgz
-          echo "$PWD/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
+          curl -fsSL https://musl.cc/aarch64-linux-musl-cross.tgz | tar xz -C /opt
+          echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
@@ -89,6 +88,7 @@ jobs:
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-musl-gcc
           CC_aarch64_unknown_linux_musl: aarch64-linux-musl-gcc
+          AR_aarch64_unknown_linux_musl: aarch64-linux-musl-ar
 
       - name: Package (Unix)
         if: runner.os != 'Windows'
