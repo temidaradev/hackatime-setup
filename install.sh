@@ -41,7 +41,23 @@ case "$ARCH" in
     *)             echo "Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-ASSET_NAME="hackatime_setup-${OS_NAME}-${ARCH_NAME}.tar.gz"
+USE_MUSL="false"
+if [ "$OS_NAME" = "linux" ]; then
+    if grep -qsi "chromeos" /proc/version 2>/dev/null || \
+       grep -qsi "chrome os" /proc/version 2>/dev/null || \
+       [ -d /opt/google/cros-containers ] || \
+       [ -f /dev/.cros_milestone ]; then
+        USE_MUSL="true"
+    elif ! ldd --version 2>&1 | grep -qi "gnu\|glibc" 2>/dev/null; then
+        USE_MUSL="true"
+    fi
+fi
+
+if [ "$USE_MUSL" = "true" ]; then
+    ASSET_NAME="hackatime_setup-linux-musl-${ARCH_NAME}.tar.gz"
+else
+    ASSET_NAME="hackatime_setup-${OS_NAME}-${ARCH_NAME}.tar.gz"
+fi
 
 # Get latest release download URL
 DOWNLOAD_URL=$(curl -sL "https://api.github.com/repos/${REPO}/releases/latest" \
