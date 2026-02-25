@@ -12,19 +12,13 @@ pub use xcode::Xcode;
 pub use zed::Zed;
 
 pub trait EditorPlugin: Send + Sync {
-    /// Human-readable name, e.g. "VS Code", "Cursor"
     fn name(&self) -> String;
-
-    /// Detect whether this editor is installed
     fn is_installed(&self) -> bool;
-
-    /// Install the WakaTime plugin for this editor
     fn install(&self) -> Result<()>;
 }
 
 pub fn all_editors() -> Vec<Box<dyn EditorPlugin>> {
     vec![
-        // VS Code family
         Box::new(VsCodeFamily {
             name: "VS Code",
             config_subdir: ".vscode",
@@ -67,11 +61,8 @@ pub fn all_editors() -> Vec<Box<dyn EditorPlugin>> {
             macos_app_name: "Trae",
             windows_app_folder: "Trae",
         }),
-        // Xcode (macOS only)
         Box::new(Xcode),
-        // Zed
         Box::new(Zed),
-        // JetBrains family
         Box::new(JetBrainsFamily {
             name: "IntelliJ IDEA",
             product_codes: &["IntelliJIdea", "IdeaIC"],

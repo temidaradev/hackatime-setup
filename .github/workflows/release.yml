@@ -19,6 +19,12 @@ jobs:
           - target: aarch64-unknown-linux-gnu
             os: blacksmith-4vcpu-ubuntu-2404-arm
             name: linux-aarch64
+          - target: x86_64-unknown-linux-musl
+            os: blacksmith-4vcpu-ubuntu-2404
+            name: linux-musl-x86_64
+          - target: aarch64-unknown-linux-musl
+            os: blacksmith-4vcpu-ubuntu-2404-arm
+            name: linux-musl-aarch64
           - target: x86_64-pc-windows-msvc
             os: blacksmith-4vcpu-windows-2025
             name: windows-x86_64
@@ -49,21 +55,37 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.target }}-cargo
 
 
-      - name: Install cross-compilation tools (Linux ARM)
+      - name: Install cross-compilation tools (Linux ARM GNU)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu
 
+      - name: Install musl tools (x86_64)
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
+      - name: Install musl tools (aarch64)
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
-        if: matrix.target != 'aarch64-unknown-linux-gnu'
+        if: "!contains(matrix.target, 'aarch64-unknown-linux')"
 
-      - name: Build (Linux ARM)
+      - name: Build (Linux ARM GNU)
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: cargo build --release --target ${{ matrix.target }}
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+
+      - name: Build (Linux ARM MUSL)
+        if: matrix.target == 'aarch64-unknown-linux-musl'
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Package (Unix)
         if: runner.os != 'Windows'
