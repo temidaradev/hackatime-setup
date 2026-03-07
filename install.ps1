@@ -7,7 +7,7 @@
 # This script downloads the Hackatime installer from our GitHub. It's written in Rust and is
 # open source: https://github.com/hackclub/hackatime-setup
 #
-# If you need help, ask in the #hackatime-v2 channel on Slack!
+# If you need help, ask in the #hackatime-help channel on Slack!
 
 param(
     [Parameter(Mandatory=$true, Position=0)]
@@ -192,7 +192,7 @@ exclude_unknown_project = true
     Write-Color "  Docs: " -NoNewline
     Write-Color "https://hackatime.hackclub.com/docs" -Color Cyan
     Write-Color ""
-    Write-Color "  Need help? Ask in #hackatime-v2 on Slack:" -Color White
+    Write-Color "  Need help? Ask in #hackatime-help on Slack:" -Color White
     Write-Color "  $SlackChannel" -Color Cyan
     Write-Color ""
     Write-Color "  IMPORTANT: " -Color Yellow -NoNewline
