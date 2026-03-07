@@ -1,6 +1,4 @@
-use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
 
 use color_eyre::{Result, eyre::eyre};
 
@@ -26,7 +24,7 @@ impl EditorPlugin for Xcode {
         #[cfg(target_os = "macos")]
         {
             PathBuf::from("/Applications/Xcode.app").exists()
-                || Command::new("xcrun")
+                || std::process::Command::new("xcrun")
                     .arg("--version")
                     .output()
                     .is_ok_and(|o| o.status.success())
@@ -46,6 +44,9 @@ impl EditorPlugin for Xcode {
 
         #[cfg(target_os = "macos")]
         {
+            use std::fs;
+            use std::process::Command;
+
             if Self::app_path().exists() {
                 return Ok(());
             }

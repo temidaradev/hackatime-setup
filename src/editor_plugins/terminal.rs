@@ -153,6 +153,11 @@ impl TerminalWakaTime {
             .map_err(|e| eyre!("Failed to set executable permissions on {}: {e}", path.display()))
     }
 
+    #[cfg(not(unix))]
+    fn make_executable(_path: &Path) -> Result<()> {
+        Ok(())
+    }
+
     fn shell_configs() -> Vec<(&'static str, PathBuf)> {
         let home = match dirs::home_dir() {
             Some(h) => h,
