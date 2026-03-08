@@ -62,7 +62,7 @@ tar -xzf "$TEMP_DIR/$ASSET_NAME" -C "$TEMP_DIR"
 chmod +x "$TEMP_DIR/$BINARY_NAME"
 
 if [ -n "$API_URL" ]; then
-    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY" --api-url "$API_URL"
+    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY" --api-url "$API_URL" </dev/tty
 else
-    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY"
+    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY" </dev/tty
 fi
