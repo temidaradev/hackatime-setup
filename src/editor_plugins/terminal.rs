@@ -27,7 +27,11 @@ impl TerminalWakaTime {
         let arch = match ARCH {
             "x86_64" => "amd64",
             "aarch64" => "arm64",
-            other => return Err(eyre!("Unsupported architecture for terminal-wakatime: {other}")),
+            other => {
+                return Err(eyre!(
+                    "Unsupported architecture for terminal-wakatime: {other}"
+                ));
+            }
         };
         Ok((os, arch))
     }
@@ -92,9 +96,8 @@ impl TerminalWakaTime {
 
     fn download_binary(client: &reqwest::blocking::Client, tag: &str) -> Result<Vec<u8>> {
         let (os, arch) = Self::release_target()?;
-        let url = format!(
-            "https://github.com/{REPO}/releases/download/{tag}/{BINARY_NAME}-{os}-{arch}"
-        );
+        let url =
+            format!("https://github.com/{REPO}/releases/download/{tag}/{BINARY_NAME}-{os}-{arch}");
 
         let response = client
             .get(&url)
@@ -140,8 +143,7 @@ impl TerminalWakaTime {
             fs::create_dir_all(parent)
                 .map_err(|e| eyre!("Failed to create {}: {e}", parent.display()))?;
         }
-        fs::write(path, bytes)
-            .map_err(|e| eyre!("Failed to write {}: {e}", path.display()))
+        fs::write(path, bytes).map_err(|e| eyre!("Failed to write {}: {e}", path.display()))
     }
 
     #[cfg(unix)]
@@ -149,8 +151,12 @@ impl TerminalWakaTime {
         use std::os::unix::fs::PermissionsExt;
 
         let perms = std::fs::Permissions::from_mode(0o755);
-        fs::set_permissions(path, perms)
-            .map_err(|e| eyre!("Failed to set executable permissions on {}: {e}", path.display()))
+        fs::set_permissions(path, perms).map_err(|e| {
+            eyre!(
+                "Failed to set executable permissions on {}: {e}",
+                path.display()
+            )
+        })
     }
 
     #[cfg(not(unix))]
@@ -255,7 +261,7 @@ impl EditorPlugin for TerminalWakaTime {
         }
     }
 
-    fn install(&self) -> Result<()> {
+    fn install(&self) -> Result<Option<String>> {
         #[cfg(target_os = "windows")]
         {
             return Err(eyre!(
@@ -288,7 +294,7 @@ impl EditorPlugin for TerminalWakaTime {
                 Self::configure_shell(shell, config_path, needs_path)?;
             }
 
-            Ok(())
+            Ok(None)
         }
     }
 }

@@ -110,7 +110,7 @@ impl EditorPlugin for VsCodeFamily {
                 .unwrap_or(false)
     }
 
-    fn install(&self) -> Result<()> {
+    fn install(&self) -> Result<Option<String>> {
         let cli_path = self.find_cli().ok_or_else(|| {
             eyre!(
                 "{} CLI not found. Is it installed and in your PATH?",
@@ -146,7 +146,7 @@ impl EditorPlugin for VsCodeFamily {
             .map_err(|e| eyre!("Failed to execute {:?}: {}", cli_path, e))?;
 
         if status.success() {
-            Ok(())
+            Ok(None)
         } else {
             Err(eyre!(
                 "Failed to install WakaTime extension for {}. Exit code: {:?}",

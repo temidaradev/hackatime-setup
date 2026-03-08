@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use color_eyre::{Result, eyre::eyre};
-use colored::Colorize;
 use jsonc_parser::{ParseOptions, cst::CstRootNode, json};
 
 use super::EditorPlugin;
@@ -134,18 +133,18 @@ impl EditorPlugin for Zed {
         Self::has_url_handler()
     }
 
-    fn install(&self) -> Result<()> {
-        if is_process_running("zed") {
-            eprintln!(
-                "{}",
-                "Warning: Zed appears to be running - you'll need to restart the editor to finalize installation.".yellow()
-            );
-        }
+    fn install(&self) -> Result<Option<String>> {
+        let warning = if is_process_running("zed") {
+            Some("Zed appears to be running - you'll need to restart the editor to finalize installation.".to_string())
+        } else {
+            None
+        };
 
         let settings_path = Self::config_dir()
             .ok_or_else(|| eyre!("Could not determine Zed config directory"))?
             .join("settings.json");
 
-        Self::add_extension_to_settings(&settings_path)
+        Self::add_extension_to_settings(&settings_path)?;
+        Ok(warning)
     }
 }

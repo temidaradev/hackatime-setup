@@ -36,7 +36,7 @@ impl EditorPlugin for Xcode {
         }
     }
 
-    fn install(&self) -> Result<()> {
+    fn install(&self) -> Result<Option<String>> {
         #[cfg(not(target_os = "macos"))]
         {
             return Err(eyre!("Xcode is only supported on macOS"));
@@ -48,11 +48,11 @@ impl EditorPlugin for Xcode {
             use std::process::Command;
 
             if Self::app_path().exists() {
-                return Ok(());
+                return Ok(None);
             }
 
-            let tmp_dir = tempfile::tempdir()
-                .map_err(|e| eyre!("Failed to create temp directory: {}", e))?;
+            let tmp_dir =
+                tempfile::tempdir().map_err(|e| eyre!("Failed to create temp directory: {}", e))?;
             let zip_path = tmp_dir.path().join("macos-wakatime.zip");
 
             let client = reqwest::blocking::Client::new();
@@ -71,8 +71,7 @@ impl EditorPlugin for Xcode {
             let bytes = response
                 .bytes()
                 .map_err(|e| eyre!("Failed to read download: {}", e))?;
-            fs::write(&zip_path, &bytes)
-                .map_err(|e| eyre!("Failed to write zip file: {}", e))?;
+            fs::write(&zip_path, &bytes).map_err(|e| eyre!("Failed to write zip file: {}", e))?;
 
             let status = Command::new("ditto")
                 .args([
@@ -116,7 +115,7 @@ impl EditorPlugin for Xcode {
                 .spawn()
                 .map_err(|e| eyre!("Failed to launch WakaTime.app: {}", e))?;
 
-            Ok(())
+            Ok(None)
         }
     }
 }

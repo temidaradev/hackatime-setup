@@ -20,8 +20,9 @@ pub trait EditorPlugin: Send + Sync {
     /// Detect whether this editor is installed
     fn is_installed(&self) -> bool;
 
-    /// Install the WakaTime plugin for this editor
-    fn install(&self) -> Result<()>;
+    /// Install the WakaTime plugin for this editor.
+    /// Returns an optional warning message (e.g. "restart required").
+    fn install(&self) -> Result<Option<String>>;
 }
 
 pub fn all_editors() -> Vec<Box<dyn EditorPlugin>> {

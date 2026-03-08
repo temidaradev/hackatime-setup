@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use color_eyre::{Result, eyre::eyre};
-use colored::Colorize;
 use which::which;
 
 use super::EditorPlugin;
@@ -132,16 +131,15 @@ impl EditorPlugin for JetBrainsFamily {
         !self.config_dirs().is_empty() || self.find_cli().is_some()
     }
 
-    fn install(&self) -> Result<()> {
-        if self.is_running() {
-            eprintln!(
-                "{}",
-                format!(
-                    "Warning: {} appears to be running. Please close it for the plugin to install correctly.",
-                    self.name
-                ).yellow()
-            );
-        }
+    fn install(&self) -> Result<Option<String>> {
+        let warning = if self.is_running() {
+            Some(format!(
+                "{} appears to be running. Please close it for the plugin to install correctly.",
+                self.name
+            ))
+        } else {
+            None
+        };
 
         let cli_path = self
             .find_cli()
@@ -168,7 +166,7 @@ impl EditorPlugin for JetBrainsFamily {
             .status()?;
 
         if status.success() {
-            Ok(())
+            Ok(warning)
         } else {
             Err(eyre!("Failed to install WakaTime plugin for {}", self.name))
         }

@@ -3,7 +3,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use clap::Parser;
 use color_eyre::{Result, eyre::ContextCompat};
 use colored::Colorize;
-use dialoguer::{Confirm, MultiSelect, Select, theme::ColorfulTheme};
 use indicatif::ProgressBar;
 use ini::{Ini, WriteOption};
 use inkjet::{
@@ -11,6 +10,7 @@ use inkjet::{
     formatter::Terminal,
     theme::{Theme, vendored},
 };
+use inquire::{Confirm, MultiSelect, Select};
 use rand::Rng;
 use rayon::prelude::*;
 use reqwest::blocking::Client;
@@ -86,7 +86,6 @@ fn send_test_heartbeat(api_key: &str, api_url: &str) -> Result<()> {
 }
 
 fn build_config(api_key: &str, api_url: &str, advanced: bool) -> Result<Ini> {
-    let theme = ColorfulTheme::default();
     let mut conf = Ini::new();
 
     conf.with_section(Some("settings"))
@@ -96,15 +95,13 @@ fn build_config(api_key: &str, api_url: &str, advanced: bool) -> Result<Ini> {
         .set("exclude_unknown_project", "true");
 
     if advanced {
-        let hide_branch = Confirm::with_theme(&theme)
-            .with_prompt("Hide branch names?")
-            .default(false)
-            .interact()?;
+        let hide_branch = Confirm::new("Hide branch names?")
+            .with_default(false)
+            .prompt()?;
 
-        let anonymize_hostname = Confirm::with_theme(&theme)
-            .with_prompt("Anonymize your machine name?")
-            .default(false)
-            .interact()?;
+        let anonymize_hostname = Confirm::new("Anonymize your machine name?")
+            .with_default(false)
+            .prompt()?;
 
         if hide_branch {
             conf.with_section(Some("settings"))
@@ -143,13 +140,11 @@ fn main() -> Result<()> {
     println!("{}", "Welcome to Hackatime!\n".italic());
 
     let setup_options = vec!["Quick setup", "Advanced setup"];
-    let setup_choice = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Which setup mode would you like?")
-        .items(&setup_options)
-        .default(0)
-        .interact()?;
+    let setup_choice = Select::new("Which setup mode would you like?", setup_options)
+        .with_starting_cursor(0)
+        .prompt()?;
 
-    let is_advanced = setup_choice == 1;
+    let is_advanced = setup_choice == "Advanced setup";
 
     let conf = build_config(&cli.key, &cli.api_url, is_advanced)?;
 
@@ -170,11 +165,9 @@ fn main() -> Result<()> {
     print_ini(&generated_config)?;
     println!();
 
-    let write = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt("Should I write this to your WakaTime config?")
-        .default(true)
-        .interact()
-        .unwrap();
+    let write = Confirm::new("Should I write this to your WakaTime config?")
+        .with_default(true)
+        .prompt()?;
 
     if !write {
         eprintln!("{}", "Understood, exiting now.".dimmed());
@@ -202,17 +195,16 @@ fn main() -> Result<()> {
         println!("{}", "No supported editors found.".dimmed());
     } else {
         let editor_names: Vec<String> = installed_editors.iter().map(|e| e.name()).collect();
-        let all_selected: Vec<bool> = vec![true; editor_names.len()];
-        let selections = MultiSelect::with_theme(&ColorfulTheme::default())
-            .with_prompt("What editors should I install Hackatime to? (space to select/unselect)")
-            .items(&editor_names)
-            .defaults(&all_selected)
-            .interact()?;
+        let all_selected: Vec<usize> = (0..editor_names.len()).collect();
+        let selections =
+            MultiSelect::new("What editors should I install Hackatime to?", editor_names)
+                .with_default(&all_selected)
+                .prompt()?;
 
         if !selections.is_empty() {
-            let selected_editors: Vec<_> = selections
-                .into_iter()
-                .map(|i| &installed_editors[i])
+            let selected_editors: Vec<_> = installed_editors
+                .iter()
+                .filter(|e| selections.contains(&e.name()))
                 .collect();
             install_plugins(selected_editors);
         } else {
@@ -252,7 +244,12 @@ fn install_plugins(selected_editors: Vec<&Box<dyn EditorPlugin>>) {
         pb.enable_steady_tick(std::time::Duration::from_millis(80));
 
         match editor.install() {
-            Ok(()) => pb.finish_with_message(format!("{} Installed for {}", "✔".green(), name)),
+            Ok(warning) => {
+                pb.finish_with_message(format!("{} Installed for {}", "✔".green(), name));
+                if let Some(msg) = warning {
+                    eprintln!("  {} {}", "▲".yellow(), msg);
+                }
+            }
             Err(e) => pb.finish_with_message(format!("{} {} failed: {}", "✘".red(), name, e)),
         }
     }
