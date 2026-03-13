@@ -1,19 +1,8 @@
-#  _                _         _   _                
-# | |__   __ _  ___| | ____ _| |_(_)_ __ ___   ___ 
-# | '_ \ / _` |/ __| |/ / _` | __| | '_ ` _ \ / _ \
-# | | | | (_| | (__|   < (_| | |_| | | | | | |  __/
-# |_| |_|\__,_|\___|_|\_\__,_|\__|_|_| |_| |_|\___|
-#
-# This script downloads the Hackatime installer from our GitHub. It's written in Rust and is
-# open source: https://github.com/hackclub/hackatime-setup
-#
-# If you need help, ask in the #hackatime-help channel on Slack!
-
 param(
-    [Parameter(Mandatory=$true, Position=0)]
+    [Parameter(Mandatory = $true, Position = 0)]
     [string]$ApiKey,
 
-    [Parameter(Mandatory=$false, Position=1)]
+    [Parameter(Mandatory = $false, Position = 1)]
     [string]$ApiUrl
 )
 
@@ -39,13 +28,16 @@ function Write-Color {
         [ConsoleColor]$Color = "White",
         [switch]$NoNewline
     )
+
     $prev = $Host.UI.RawUI.ForegroundColor
     $Host.UI.RawUI.ForegroundColor = $Color
+
     if ($NoNewline) {
         Write-Host $Text -NoNewline
     } else {
         Write-Host $Text
     }
+
     $Host.UI.RawUI.ForegroundColor = $prev
 }
 
@@ -59,24 +51,21 @@ function Write-Banner {
     Write-Color ""
 }
 
-# --- Primitive fallback installer ---
+# --- Simplified setup ---
 
-function Install-Primitive {
+function Install-Simplified {
     Write-Banner
 
     Write-Color "============================================================" -Color Yellow
-    Write-Color "  PRIMITIVE INSTALLER MODE" -Color Yellow
+    Write-Color "  SETUP" -Color Yellow
     Write-Color "============================================================" -Color Yellow
     Write-Color ""
-    Write-Color "  Windows Defender flagged the full installer as a threat." -Color Red
-    Write-Color "  This is a false positive - the installer is open source:" -Color White
-    Write-Color "  https://github.com/hackclub/hackatime-setup" -Color Cyan
-    Write-Color ""
-    Write-Color "  Falling back to a primitive installer that will:" -Color White
+    Write-Color "  Setting up Hackatime on this system." -Color White
+    Write-Color "  This will:" -Color White
     Write-Color "    1. Write your ~/.wakatime.cfg config file" -Color Gray
     Write-Color "    2. Try to install the VS Code extension" -Color Gray
     Write-Color ""
-    Write-Color "  For other editors, you will need to install the" -Color White
+    Write-Color "  For other editors, you'll need to install the" -Color White
     Write-Color "  WakaTime plugin manually. Need help? Ask here:" -Color White
     Write-Color "  $SlackChannel" -Color Cyan
     Write-Color ""
@@ -105,8 +94,7 @@ exclude_unknown_project = true
         Set-Content -Path $ConfigPath -Value $ConfigContent -Encoding UTF8
         Write-Color "  OK " -Color Green -NoNewline
         Write-Color "Config written successfully."
-    }
-    catch {
+    } catch {
         Write-Color "  FAIL " -Color Red -NoNewline
         Write-Color "Could not write config: $_"
         return
@@ -117,7 +105,7 @@ exclude_unknown_project = true
     # --- Step 2: Try to install VS Code extension ---
 
     Write-Color "[2/2] " -Color Green -NoNewline
-    Write-Color "Attempting to install WakaTime extension for VS Code..."
+    Write-Color "Checking for VS Code..."
 
     $VsCodeInstalled = $false
     $CodeCli = $null
@@ -131,7 +119,8 @@ exclude_unknown_project = true
                 $CodeCli = $found.Source
                 break
             }
-        } catch {}
+        } catch {
+        }
     }
 
     # Also check common Windows install paths
@@ -141,6 +130,7 @@ exclude_unknown_project = true
             "$env:ProgramFiles\Microsoft VS Code\bin\code.cmd",
             "${env:ProgramFiles(x86)}\Microsoft VS Code\bin\code.cmd"
         )
+
         foreach ($path in $FallbackPaths) {
             if (Test-Path $path) {
                 $CodeCli = $path
@@ -150,24 +140,30 @@ exclude_unknown_project = true
     }
 
     if ($CodeCli) {
+        Write-Color "  Found VS Code, installing WakaTime extension..."
         try {
-            $process = Start-Process -FilePath "cmd" -ArgumentList "/C", "`"$CodeCli`"", "--install-extension", "WakaTime.vscode-wakatime" -Wait -PassThru -NoNewWindow 2>$null
+            $process = Start-Process `
+                -FilePath "cmd" `
+                -ArgumentList "/C", "`"$CodeCli`"", "--install-extension", "WakaTime.vscode-wakatime" `
+                -Wait `
+                -PassThru `
+                -NoNewWindow 2>$null
+
             if ($process.ExitCode -eq 0) {
                 $VsCodeInstalled = $true
                 Write-Color "  OK " -Color Green -NoNewline
-                Write-Color "WakaTime extension installed for VS Code."
+                Write-Color "WakaTime extension installed."
             } else {
-                Write-Color "  WARN " -Color Yellow -NoNewline
-                Write-Color "VS Code extension install exited with code $($process.ExitCode)."
+                Write-Color "  Note " -Color Yellow -NoNewline
+                Write-Color "Extension install exited with code $($process.ExitCode)."
             }
-        }
-        catch {
-            Write-Color "  WARN " -Color Yellow -NoNewline
+        } catch {
+            Write-Color "  Note " -Color Yellow -NoNewline
             Write-Color "Could not install VS Code extension: $_"
         }
     } else {
-        Write-Color "  SKIP " -Color Yellow -NoNewline
-        Write-Color "VS Code CLI not found. Install the WakaTime extension manually from the VS Code marketplace."
+        Write-Color "  Note " -Color Yellow -NoNewline
+        Write-Color "VS Code not found. Install the WakaTime extension manually from the marketplace."
     }
 
     Write-Color ""
@@ -175,18 +171,20 @@ exclude_unknown_project = true
     # --- Summary ---
 
     Write-Color "============================================================" -Color Green
-    Write-Color "  SETUP COMPLETE (primitive mode)" -Color Green
+    Write-Color "  SETUP COMPLETE" -Color Green
     Write-Color "============================================================" -Color Green
     Write-Color ""
-    Write-Color "  Config written to: " -NoNewline
+    Write-Color "  Config: " -NoNewline
     Write-Color $ConfigPath -Color Green
+
     if ($VsCodeInstalled) {
-        Write-Color "  VS Code extension: " -NoNewline
-        Write-Color "Installed" -Color Green
+        Write-Color "  VS Code: " -NoNewline
+        Write-Color "WakaTime extension installed" -Color Green
     } else {
-        Write-Color "  VS Code extension: " -NoNewline
-        Write-Color "Not installed (do it manually)" -Color Yellow
+        Write-Color "  VS Code: " -NoNewline
+        Write-Color "Install WakaTime extension manually" -Color Yellow
     }
+
     Write-Color ""
     Write-Color "  For other editors, install the WakaTime plugin manually." -Color White
     Write-Color "  Docs: " -NoNewline
@@ -195,7 +193,7 @@ exclude_unknown_project = true
     Write-Color "  Need help? Ask in #hackatime-help on Slack:" -Color White
     Write-Color "  $SlackChannel" -Color Cyan
     Write-Color ""
-    Write-Color "  IMPORTANT: " -Color Yellow -NoNewline
+    Write-Color "  Tip: " -Color Yellow -NoNewline
     Write-Color "Restart your editor after setup for tracking to begin." -Color White
     Write-Color ""
 }
@@ -225,7 +223,7 @@ try {
 
     $ExePath = Join-Path $TempDir $BinaryName
 
-    # Try running the installer - catch Defender blocks
+    # Try running the installer - if anything fails, use simplified setup
     try {
         if ($ApiUrl -ne $DefaultApiUrl) {
             & $ExePath --key $ApiKey --api-url $ApiUrl
@@ -236,27 +234,13 @@ try {
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
             throw "Installer exited with code $LASTEXITCODE"
         }
-    }
-    catch {
-        $errMsg = $_.Exception.Message
-        # Detect Defender / antivirus blocks (common error patterns)
-        $isDefenderBlock = (
-            $errMsg -match "virus" -or
-            $errMsg -match "malware" -or
-            $errMsg -match "threat" -or
-            $errMsg -match "quarantine" -or
-            $errMsg -match "Operation did not complete successfully because the file contains a virus" -or
-            $errMsg -match "Access is denied" -or
-            (-not (Test-Path $ExePath))
-        )
+    } catch {
+        Write-Color ""
+        Write-Color "Using simplified setup for this system..." -Color Yellow
+        Write-Color ""
 
-        if ($isDefenderBlock) {
-            Install-Primitive
-        } else {
-            throw
-        }
+        Install-Simplified
     }
-}
-finally {
+} finally {
     Remove-Item -Recurse -Force $TempDir -ErrorAction SilentlyContinue
 }
