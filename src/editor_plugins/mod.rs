@@ -1,9 +1,13 @@
 mod jetbrains;
-mod terminal;
 mod utils;
 mod vscode;
-mod xcode;
 mod zed;
+
+#[cfg(not(windows))]
+mod terminal;
+
+#[cfg(target_os = "macos")]
+mod xcode;
 
 use color_eyre::Result;
 
