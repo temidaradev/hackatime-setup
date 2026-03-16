@@ -12,8 +12,10 @@ mod xcode;
 use color_eyre::Result;
 
 pub use jetbrains::JetBrainsFamily;
+#[cfg(not(windows))]
 pub use terminal::TerminalWakaTime;
 pub use vscode::VsCodeFamily;
+#[cfg(target_os = "macos")]
 pub use xcode::Xcode;
 pub use zed::Zed;
 
@@ -75,10 +77,12 @@ pub fn all_editors() -> Vec<Box<dyn EditorPlugin>> {
             windows_app_folder: "Trae",
         }),
         // Xcode (macOS only)
+        #[cfg(target_os = "macos")]
         Box::new(Xcode),
         // Zed
         Box::new(Zed),
         // Terminal (bash, zsh, fish)
+        #[cfg(not(windows))]
         Box::new(TerminalWakaTime),
         // JetBrains family
         Box::new(JetBrainsFamily {
