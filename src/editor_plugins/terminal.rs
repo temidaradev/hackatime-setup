@@ -283,12 +283,20 @@ impl TerminalWakaTime {
     }
 
     fn configure_nushell(config_path: &Path, contents: String, needs_path: bool) -> Result<()> {
-        let mut new_contents = contents;
-
-        if new_contents.contains(NU_SETUP_MARKER) {
+        let Some(new_contents) = Self::build_nushell_config(&contents, needs_path) else {
             return Ok(());
+        };
+
+        fs::write(config_path, new_contents)
+            .map_err(|e| eyre!("Failed to write {}: {e}", config_path.display()))
+    }
+
+    fn build_nushell_config(contents: &str, needs_path: bool) -> Option<String> {
+        if contents.contains(NU_SETUP_MARKER) {
+            return None;
         }
 
+        let mut new_contents = contents.to_string();
         if !new_contents.is_empty() && !new_contents.ends_with('\n') {
             new_contents.push('\n');
         }
@@ -299,13 +307,42 @@ impl TerminalWakaTime {
         if needs_path {
             new_contents.push_str(NU_PATH_LINE);
             new_contents.push('\n');
+            new_contents.push('\n');
         }
 
         new_contents.push_str(NU_HOOKS_BLOCK);
         new_contents.push('\n');
 
-        fs::write(config_path, new_contents)
-            .map_err(|e| eyre!("Failed to write {}: {e}", config_path.display()))
+        Some(new_contents)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{NU_HOOKS_BLOCK, NU_PATH_LINE, NU_SETUP_MARKER, TerminalWakaTime};
+
+    #[test]
+    fn build_nushell_config_is_idempotent_when_marker_exists() {
+        let existing = format!("before\n{NU_SETUP_MARKER}\nafter\n");
+        assert!(TerminalWakaTime::build_nushell_config(&existing, true).is_none());
+    }
+
+    #[test]
+    fn build_nushell_config_includes_path_and_blank_line_when_needed() {
+        let generated = TerminalWakaTime::build_nushell_config("", true)
+            .expect("config should be generated when marker is absent");
+
+        let expected_gap = format!("{NU_PATH_LINE}\n\n{NU_HOOKS_BLOCK}");
+        assert!(generated.contains(&expected_gap));
+    }
+
+    #[test]
+    fn build_nushell_config_omits_path_when_not_needed() {
+        let generated = TerminalWakaTime::build_nushell_config("", false)
+            .expect("config should be generated when marker is absent");
+
+        assert!(!generated.contains(NU_PATH_LINE));
+        assert!(generated.contains(NU_HOOKS_BLOCK));
     }
 }
 
