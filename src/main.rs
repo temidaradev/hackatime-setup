@@ -34,6 +34,10 @@ struct Cli {
     /// The API URL to use
     #[arg(long, default_value = DEFAULT_API_URL)]
     api_url: String,
+
+    /// Skip all prompts and use defaults (quick setup, install for all detected editors)
+    #[arg(short, long)]
+    yes: bool,
 }
 
 #[derive(Serialize)]
@@ -139,12 +143,15 @@ fn main() -> Result<()> {
 
     println!("{}", "Welcome to Hackatime!\n".italic());
 
-    let setup_options = vec!["Quick setup", "Advanced setup"];
-    let setup_choice = Select::new("Which setup mode would you like?", setup_options)
-        .with_starting_cursor(0)
-        .prompt()?;
-
-    let is_advanced = setup_choice == "Advanced setup";
+    let is_advanced = if cli.yes {
+        false
+    } else {
+        let setup_options = vec!["Quick setup", "Advanced setup"];
+        let setup_choice = Select::new("Which setup mode would you like?", setup_options)
+            .with_starting_cursor(0)
+            .prompt()?;
+        setup_choice == "Advanced setup"
+    };
 
     let conf = build_config(&cli.key, &cli.api_url, is_advanced)?;
 
@@ -165,9 +172,13 @@ fn main() -> Result<()> {
     print_ini(&generated_config)?;
     println!();
 
-    let write = Confirm::new("Should I write this to your WakaTime config?")
-        .with_default(true)
-        .prompt()?;
+    let write = if cli.yes {
+        true
+    } else {
+        Confirm::new("Should I write this to your WakaTime config?")
+            .with_default(true)
+            .prompt()?
+    };
 
     if !write {
         eprintln!("{}", "Understood, exiting now.".dimmed());
@@ -195,11 +206,14 @@ fn main() -> Result<()> {
         println!("{}", "No supported editors found.".dimmed());
     } else {
         let editor_names: Vec<String> = installed_editors.iter().map(|e| e.name()).collect();
-        let all_selected: Vec<usize> = (0..editor_names.len()).collect();
-        let selections =
+        let selections = if cli.yes {
+            editor_names.clone()
+        } else {
+            let all_selected: Vec<usize> = (0..editor_names.len()).collect();
             MultiSelect::new("What editors should I install Hackatime to?", editor_names)
                 .with_default(&all_selected)
-                .prompt()?;
+                .prompt()?
+        };
 
         if !selections.is_empty() {
             let selected_editors: Vec<_> = installed_editors
