@@ -15,15 +15,24 @@ set -euo pipefail
 REPO="hackclub/hackatime-setup"
 BINARY_NAME="hackatime_setup"
 
-# Check for API key argument
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <api-key> [api-url]"
+# Parse arguments: <api-key> [api-url] with optional --yes/-y flag anywhere
+YES=""
+POSITIONAL=()
+for arg in "$@"; do
+    case "$arg" in
+        -y|--yes) YES="--yes" ;;
+        *)        POSITIONAL+=("$arg") ;;
+    esac
+done
+
+if [ "${#POSITIONAL[@]}" -lt 1 ]; then
+    echo "Usage: $0 <api-key> [api-url] [--yes]"
     echo "  curl -fsSL https://raw.githubusercontent.com/$REPO/main/install.sh | bash -s -- YOUR_API_KEY"
     exit 1
 fi
 
-API_KEY="$1"
-API_URL="${2:-}"
+API_KEY="${POSITIONAL[0]}"
+API_URL="${POSITIONAL[1]:-}"
 
 # Detect OS
 OS="$(uname -s)"
@@ -61,8 +70,13 @@ curl -sL "$DOWNLOAD_URL" -o "$TEMP_DIR/$ASSET_NAME"
 tar -xzf "$TEMP_DIR/$ASSET_NAME" -C "$TEMP_DIR"
 chmod +x "$TEMP_DIR/$BINARY_NAME"
 
+ARGS=(--key "$API_KEY")
 if [ -n "$API_URL" ]; then
-    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY" --api-url "$API_URL" </dev/tty
+    ARGS+=(--api-url "$API_URL")
+fi
+if [ -n "$YES" ]; then
+    ARGS+=("$YES")
+    "$TEMP_DIR/$BINARY_NAME" "${ARGS[@]}"
 else
-    "$TEMP_DIR/$BINARY_NAME" --key "$API_KEY" </dev/tty
+    "$TEMP_DIR/$BINARY_NAME" "${ARGS[@]}" </dev/tty
 fi

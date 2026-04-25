@@ -3,7 +3,11 @@ param(
     [string]$ApiKey,
 
     [Parameter(Mandatory = $false, Position = 1)]
-    [string]$ApiUrl
+    [string]$ApiUrl,
+
+    [Parameter(Mandatory = $false)]
+    [Alias("y")]
+    [switch]$Yes
 )
 
 $ErrorActionPreference = "Stop"
@@ -225,11 +229,14 @@ try {
 
     # Try running the installer - if anything fails, use simplified setup
     try {
+        $ExeArgs = @("--key", $ApiKey)
         if ($ApiUrl -ne $DefaultApiUrl) {
-            & $ExePath --key $ApiKey --api-url $ApiUrl
-        } else {
-            & $ExePath --key $ApiKey
+            $ExeArgs += @("--api-url", $ApiUrl)
         }
+        if ($Yes) {
+            $ExeArgs += "--yes"
+        }
+        & $ExePath @ExeArgs
 
         if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
             throw "Installer exited with code $LASTEXITCODE"
