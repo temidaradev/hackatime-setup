@@ -281,7 +281,7 @@ fn install_plugins(selected_editors: Vec<&Box<dyn EditorPlugin>>) {
     }
 
     println!(
-        "\n\n{}",
+        "\n{}",
         "Done! You can now code in your editor to track your time.".bold()
     );
 }
