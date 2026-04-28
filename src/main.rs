@@ -1,14 +1,10 @@
 use std::{
     fs,
-    io::ErrorKind,
     time::{SystemTime, UNIX_EPOCH},
 };
 
 use clap::Parser;
-use color_eyre::{
-    Result,
-    eyre::{ContextCompat, WrapErr},
-};
+use color_eyre::{Result, eyre::ContextCompat};
 use colored::Colorize;
 use indicatif::ProgressBar;
 use ini::{Ini, WriteOption};
@@ -139,22 +135,11 @@ fn validate_api_key(key: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn remove_internal_config() -> Result<()> {
-    let internal_config_path = dirs::home_dir()
-        .wrap_err("Could not find home directory")?
-        .join(".wakatime-internal.cfg");
-
-    match fs::remove_file(&internal_config_path) {
-        Ok(()) => println!(
-            "{} {}",
-            "✔".green().bold(),
-            format!("Removed {}", internal_config_path.display()).green()
-        ),
-        Err(e) if e.kind() == ErrorKind::NotFound => {}
-        Err(e) => return Err(e).wrap_err("Could not remove internal WakaTime config"),
+fn remove_internal_config() {
+    if let Some(home_dir) = dirs::home_dir() {
+        let internal_config_path = home_dir.join(".wakatime-internal.cfg");
+        let _ = fs::remove_file(internal_config_path);
     }
-
-    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -272,7 +257,7 @@ fn main() -> Result<()> {
         eprintln!("{} {}", "Warning:".yellow(), e);
     }
 
-    remove_internal_config()?;
+    remove_internal_config();
 
     Ok(())
 }
