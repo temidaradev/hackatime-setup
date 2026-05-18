@@ -10,6 +10,8 @@ use super::utils::is_process_running;
 
 pub struct Zed;
 
+const EXTENSION_ID: &str = "hackatime"; // by espcaa
+
 impl Zed {
     fn has_url_handler() -> bool {
         #[cfg(target_os = "macos")]
@@ -105,9 +107,9 @@ impl Zed {
             .object_value_or_create("auto_install_extensions")
             .ok_or_else(|| eyre!("auto_install_extensions must be an object"))?;
 
-        match extensions.get("wakatime") {
+        match extensions.get(EXTENSION_ID) {
             None => {
-                extensions.append("wakatime", json!(true));
+                extensions.append(EXTENSION_ID, json!(true));
             }
             Some(prop) => {
                 prop.set_value(json!(true));
